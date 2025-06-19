@@ -52,8 +52,10 @@ class SocketHandler:
             for key, val in self.response.headers.items():
                 response_raw.append(f'{key}: {val}\r\n')
 
+        response_raw.append('\r\n')
+
         if self.response.body:
-            response_raw.append(f'\r\n{self.response.body}')
+            response_raw.append(self.response.body)
 
         response_str = ''.join(response_raw)
         self.client_socket.send(response_str.encode('utf-8'))
