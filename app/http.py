@@ -6,7 +6,7 @@ class Request:
         self.body = body
 
 class Response:
-    def __init__(self, status: str, headers: dict, body = None):
+    def __init__(self, status: str, headers: dict = None, body = None):
         self.status = status
         self.headers = headers
         self.body = body
