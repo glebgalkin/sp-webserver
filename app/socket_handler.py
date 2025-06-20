@@ -1,10 +1,14 @@
+from socket import socket
+
 from app.http import Request
 from app.router import Router
+from pathlib import Path
 
 
 class SocketHandler:
+    CHUNK_SIZE = 1024
 
-    def __init__(self, client_socket):
+    def __init__(self, client_socket: socket):
         self.client_socket = client_socket
         self.request = None
         self.response = None
@@ -55,7 +59,15 @@ class SocketHandler:
         response_raw.append('\r\n')
 
         if self.response.body:
-            response_raw.append(self.response.body)
-
-        response_str = ''.join(response_raw)
-        self.client_socket.send(response_str.encode('utf-8'))
+            if isinstance(self.response.body, str):
+                response_raw.append(self.response.body)
+                response_str = ''.join(response_raw)
+                self.client_socket.send(response_str.encode('utf-8'))
+            elif isinstance(self.response.body, Path):
+                response_str = ''.join(response_raw)
+                self.client_socket.send(response_str.encode('utf-8'))
+                with open(self.response.body, 'rb') as f:
+                    while chunk := f.read(SocketHandler.CHUNK_SIZE):
+                        self.client_socket.sendall(chunk)
+        else:
+            self.client_socket.send(''.join(response_raw).encode('utf-8'))
