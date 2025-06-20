@@ -1,5 +1,5 @@
 import socket
-from app.endpoint_service import SocketHandler
+from app.socket_handler import SocketHandler
 
 def main():
     server_socket = None
