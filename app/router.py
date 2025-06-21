@@ -1,5 +1,6 @@
 from app.http import Response
-from app.file_util import get_file, get_content_type, get_file_size_bytes
+from app.file_util import get_file, get_content_type, get_file_size_bytes, get_random_filename
+from app.file_util import save_file
 
 
 class Router:
@@ -13,6 +14,8 @@ class Router:
             return self.__handle_user_agent()
         elif self.request.path.startswith('/file'):
             return self.__handle_file()
+        elif self.request.request_type == 'POST' and self.request.path.startswith('/upload'):
+            return self.__handle_file_upload()
         else:
             return self.__get_404()
 
@@ -47,6 +50,18 @@ class Router:
         }
         return Response('HTTP/1.1 200 OK', headers, body=filepath)
 
+    def __handle_file_upload(self) -> Response:
+        save_file(self.request.body, self.request.headers['Content-Type'])
+        return Router.__get_200()
+
+    @staticmethod
+    def __get_200():
+        return Response('HTTP/1.1 200 OK')
+
     @staticmethod
     def __get_404():
         return Response('HTTP/1.1 404 Not Found')
+
+    @staticmethod
+    def __get_503():
+        return Response('HTTP/1.1 503 Service Unavailable')
