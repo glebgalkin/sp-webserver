@@ -1,7 +1,7 @@
 from socket import socket
 
-from app.http import Request
-from app.router import Router
+from app.http.http import Request
+from app.router.router import Router
 from pathlib import Path
 
 

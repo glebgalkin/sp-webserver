@@ -1,6 +1,6 @@
-from app.http import Response
-from app.file_util import get_file, get_content_type, get_file_size_bytes, get_random_filename
-from app.file_util import save_file
+from app.file_utils.file_util import get_file, get_content_type, get_file_size_bytes, save_file
+from app.http.http import Response, get_basic_headers, ResponseStatus
+from app.http.http_util import parse_filename
 
 
 class Router:
@@ -23,45 +23,38 @@ class Router:
         path = self.request.path
         body = ''.join(path.split('/')[2:])
 
-        size = str(len(body.encode('utf-8')))
-        headers = {
-            'Content-Type': 'text/plain',
-            'Content-Length': size
-        }
-        return Response('HTTP/1.1 200 OK', headers, body)
+        size = len(body.encode('utf-8'))
+        headers = get_basic_headers('text/plain', size)
+        return Response(ResponseStatus.OK.value, headers, body)
 
     def __handle_user_agent(self) -> Response:
         body = self.request.headers['User-Agent']
-        size = str(len(body.encode('utf-8')))
-        headers = {
-            'Content-Type': 'text/plain',
-            'Content-Length': size
-        }
-        return Response('HTTP/1.1 200 OK', headers, body)
+        size = len(body.encode('utf-8'))
+        headers = get_basic_headers('text/plain', size)
+        return Response(ResponseStatus.OK.value, headers, body)
 
     def __handle_file(self) -> Response:
         filename = self.request.path.split('/')[2]
         filepath = get_file(filename)
         if not filepath:
             return self.__get_404()
-        headers = {
-            'Content-Type': get_content_type(filename),
-            'Content-Length': get_file_size_bytes(filepath)
-        }
-        return Response('HTTP/1.1 200 OK', headers, body=filepath)
+
+        headers = get_basic_headers(get_content_type(filename), get_file_size_bytes(filepath))
+        return Response(ResponseStatus.OK.value, headers, body=filepath)
 
     def __handle_file_upload(self) -> Response:
-        save_file(self.request.body, self.request.headers['Content-Type'])
+        filename = parse_filename(self.request.path)
+        save_file(filename, self.request.body)
         return Router.__get_200()
 
     @staticmethod
     def __get_200():
-        return Response('HTTP/1.1 200 OK')
+        return Response(ResponseStatus.OK.value)
 
     @staticmethod
     def __get_404():
-        return Response('HTTP/1.1 404 Not Found')
+        return Response(ResponseStatus.NOT_FOUND.value)
 
     @staticmethod
     def __get_503():
-        return Response('HTTP/1.1 503 Service Unavailable')
+        return Response(ResponseStatus.SERVICE_UNAVAILABLE.value)
