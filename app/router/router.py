@@ -1,6 +1,7 @@
 from app.file_utils.file_util import get_file, get_content_type, get_file_size_bytes, save_file
 from app.http.http import Response, get_basic_headers, ResponseStatus
 from app.http.http_util import parse_filename
+import gzip
 
 
 class Router:
@@ -16,6 +17,8 @@ class Router:
             return self.__handle_file()
         elif self.request.request_type == 'POST' and self.request.path.startswith('/upload'):
             return self.__handle_file_upload()
+        elif self.request.request_type == 'POST' and self.request.path.startswith('/json'):
+            return self.__handle_json()
         else:
             return self.__get_404()
 
@@ -46,6 +49,26 @@ class Router:
         filename = parse_filename(self.request.path)
         save_file(filename, self.request.body)
         return Router.__get_200()
+
+    def __handle_json(self) -> Response:
+        size = len(self.request.body)
+        print('JSON Body size: ', size)
+        if self.__is_supports_compression():
+            body_compressed = gzip.compress(self.request.body)
+            content_length = len(body_compressed)
+            print('Compressed JSON size: ', content_length)
+            headers = get_basic_headers('application/json', content_length)
+            headers['Content-Encoding'] = 'gzip'
+
+            return Response(ResponseStatus.OK.value, headers, body_compressed)
+
+        else:
+            headers = get_basic_headers('text/plain', size)
+            return Response(ResponseStatus.OK.value, headers, self.request.body)
+
+
+    def __is_supports_compression(self):
+        return 'Accept-Encoding' in self.request.headers
 
     @staticmethod
     def __get_200():

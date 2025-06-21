@@ -83,5 +83,13 @@ class SocketHandler:
                 with open(self.response.body, 'rb') as f:
                     while chunk := f.read(SocketHandler.CHUNK_SIZE):
                         self.client_socket.sendall(chunk)
+            elif isinstance(self.response.body, bytes):
+                response_str = ''.join(response_raw)
+                self.client_socket.send(response_str.encode(SocketHandler.DEFAULT_ENCODING))
+
+                body = self.response.body
+                for i in range(0, len(body), SocketHandler.CHUNK_SIZE):
+                    self.client_socket.sendall(body[i:i + SocketHandler.CHUNK_SIZE])
+
         else:
             self.client_socket.send(''.join(response_raw).encode(SocketHandler.DEFAULT_ENCODING))
