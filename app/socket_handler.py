@@ -1,4 +1,4 @@
-from socket import socket
+from socket import socket, timeout
 
 from app.http.http import Request
 from app.router.router import Router
@@ -32,9 +32,21 @@ class SocketHandler:
         self.client_socket.close()
 
     def handle_request(self):
-        self.__parse_request()
-        self.__route_request()
-        self.__send_response()
+        self.client_socket.settimeout(5)
+        try:
+            while True:
+                self.__parse_request()
+                self.__route_request()
+                self.__send_response()
+
+                if self.request.headers.get('Connection', '').lower() == 'close':
+                    break
+
+        except timeout:
+            print("Client idle too long. Closing connection.")
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
 
 
     def __parse_request(self):

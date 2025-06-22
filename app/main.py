@@ -7,6 +7,7 @@ def main():
         server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
         while True:
             client_socket, _ = server_socket.accept()
+            print('New socket connection is created: ', client_socket)
             with SocketHandler(client_socket) as sh:
                 sh.handle_request()
 
